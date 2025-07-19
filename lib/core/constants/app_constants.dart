@@ -12,16 +12,7 @@ class AppConstants {
   static const String appDescription =
       'Aplikasi Multi-Fitur Flutter dengan Dashboard Profesional';
 
-  // Supabase Configuration
-  // Updated URL to use the correct REST API endpoint
-  static const String supabaseUrl = 'https://hpnzgrutaclyrweazivw.supabase.co';
-  static const String supabaseAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwbnpncnV0YWNseXJ3ZWF6aXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4Njk4NjMsImV4cCI6MjA2ODQ0NTg2M30.4GXxmh5DguF1zJNlkTOTWO3r7RIVbsWUpGR-AmzG-is';
-  static const String supabaseServiceRoleKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwbnpncnV0YWNseXJ3ZWF6aXZ3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mjg2OTg2MywiZXhwIjoyMDY4NDQ1ODYzfQ.lMnAn6szqAhjvoICQpxClgJiQxxeeS8tgzeHDTaa1B8';
-
-  // Database Schema Configuration
-  static const String databaseSchema = 'public';
+  // Supabase Configuration removed - using simple auth now
 
   // BotcahX API Configuration
   static const String botcahxApiUrl = 'https://api.botcahx.eu.org';
@@ -48,6 +39,7 @@ class AppConstants {
   // Default Values
   static const String defaultCurrency = 'IDR';
   static const int maxImageSize = 5242880; // 5MB
+  static const int maxVideoSize = 52428800; // 50MB
   static const int maxVideoDuration = 300; // 5 minutes
   static const List<String> supportedImageFormats = [
     'jpg',

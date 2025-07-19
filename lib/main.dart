@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'core/services/supabase_service.dart';
 import 'core/constants/app_constants.dart';
 import 'features/dashboard/dashboard_screen.dart';
-import 'features/auth/auth_screen.dart';
+import 'features/auth/login_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 
@@ -23,8 +22,7 @@ void main() async {
     // Load environment variables
     await dotenv.load(fileName: ".env");
 
-    // Initialize Supabase
-    await SupabaseService.initialize();
+    // Supabase initialization removed - using simple auth now
 
     // Set preferred orientations
     await SystemChrome.setPreferredOrientations([
@@ -104,8 +102,8 @@ class AuthWrapper extends StatelessWidget {
           return const DashboardScreen();
         }
 
-        // Show auth screen if user is not authenticated
-        return const AuthScreen();
+        // Show login screen if user is not authenticated
+        return const LoginScreen();
       },
     );
   }
@@ -132,7 +130,9 @@ class LoadingScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),

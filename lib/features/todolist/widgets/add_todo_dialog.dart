@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/services/todo_service.dart';
-import '../../../models/todo_model.dart';
+import '../../../core/models/todo_model.dart';
 import '../../../providers/auth_provider.dart';
 
 /// Dialog untuk menambah atau edit todo
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Dialog ini menyediakan form untuk membuat todo baru atau mengedit
 /// todo yang sudah ada dengan opsi lokasi dan prioritas.
 
@@ -42,21 +42,25 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
   @override
   void initState() {
     super.initState();
-    
+
     _titleController = TextEditingController(text: widget.todo?.title ?? '');
-    _descriptionController = TextEditingController(text: widget.todo?.description ?? '');
-    _categoryController = TextEditingController(text: widget.todo?.category ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.todo?.description ?? '',
+    );
+    _categoryController = TextEditingController(
+      text: widget.todo?.category ?? '',
+    );
     _tagsController = TextEditingController(
-      text: widget.todo?.tags?.join(', ') ?? '',
+      text: '', // Tags removed for simplicity
     );
 
     if (widget.todo != null) {
       _priority = widget.todo!.priority;
       _dueDate = widget.todo!.dueDate;
-      _dueTime = widget.todo!.dueDate != null 
+      _dueTime = widget.todo!.dueDate != null
           ? TimeOfDay.fromDateTime(widget.todo!.dueDate!)
           : null;
-      _includeLocation = widget.todo!.location != null;
+      _includeLocation = widget.todo!.locationName != null;
     }
   }
 
@@ -72,7 +76,7 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.todo != null;
-    
+
     return Dialog(
       child: Container(
         constraints: const BoxConstraints(maxHeight: 600),
@@ -91,10 +95,7 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    isEdit ? Icons.edit : Icons.add,
-                    color: Colors.white,
-                  ),
+                  Icon(isEdit ? Icons.edit : Icons.add, color: Colors.white),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -224,7 +225,9 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
                       // Include Location
                       CheckboxListTile(
                         title: const Text('Sertakan Lokasi Saat Ini'),
-                        subtitle: const Text('Lokasi akan disimpan bersama todo'),
+                        subtitle: const Text(
+                          'Lokasi akan disimpan bersama todo',
+                        ),
                         value: _includeLocation,
                         onChanged: (value) {
                           setState(() {
@@ -310,11 +313,9 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
       final title = _titleController.text.trim();
       final description = _descriptionController.text.trim();
       final category = _categoryController.text.trim();
-      final tagsText = _tagsController.text.trim();
-      
-      final tags = tagsText.isNotEmpty 
-          ? tagsText.split(',').map((tag) => tag.trim()).where((tag) => tag.isNotEmpty).toList()
-          : null;
+      // final tagsText = _tagsController.text.trim(); // Removed for simplicity
+
+      // Tags removed for simplicity
 
       DateTime? dueDateTime;
       if (_dueDate != null && _dueTime != null) {
@@ -328,7 +329,7 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
       }
 
       TodoModel result;
-      
+
       if (widget.todo != null) {
         // Update existing todo
         result = await _todoService.updateTodo(
@@ -338,19 +339,17 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
           dueDate: dueDateTime,
           priority: _priority,
           category: category.isEmpty ? null : category,
-          tags: tags,
+          // tags: tags, // Removed for simplicity
         );
       } else {
         // Create new todo
         result = await _todoService.createTodo(
-          userId: authProvider.currentUser!.id,
+          userId: authProvider.userId,
           title: title,
-          description: description.isEmpty ? null : description,
+          description: description.isEmpty ? 'No description' : description,
           dueDate: dueDateTime,
           priority: _priority,
-          category: category.isEmpty ? null : category,
-          tags: tags,
-          includeCurrentLocation: _includeLocation,
+          category: category.isEmpty ? 'general' : category,
         );
       }
 

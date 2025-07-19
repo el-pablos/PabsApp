@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/services/expense_service.dart';
-import '../../../models/expense_model.dart';
+import '../../../core/models/expense_model.dart';
 import '../../../providers/auth_provider.dart';
 
 /// Dialog untuk menambah atau edit expense
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Dialog ini menyediakan form untuk membuat expense baru atau mengedit
 /// expense yang sudah ada dengan opsi lokasi dan kategori.
 
@@ -66,9 +66,11 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   @override
   void initState() {
     super.initState();
-    
+
     _titleController = TextEditingController(text: widget.expense?.title ?? '');
-    _descriptionController = TextEditingController(text: widget.expense?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.expense?.description ?? '',
+    );
     _amountController = TextEditingController(
       text: widget.expense?.amount.toString() ?? '',
     );
@@ -76,8 +78,8 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
     if (widget.expense != null) {
       _category = widget.expense!.category;
       _paymentMethod = widget.expense!.paymentMethod;
-      _transactionDate = widget.expense!.transactionDate;
-      _includeLocation = widget.expense!.location != null;
+      _transactionDate = widget.expense!.date;
+      _includeLocation = widget.expense!.locationName != null;
     }
   }
 
@@ -92,7 +94,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.expense != null;
-    
+
     return Dialog(
       child: Container(
         constraints: const BoxConstraints(maxHeight: 600),
@@ -111,10 +113,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    isEdit ? Icons.edit : Icons.add,
-                    color: Colors.white,
-                  ),
+                  Icon(isEdit ? Icons.edit : Icons.add, color: Colors.white),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -243,7 +242,9 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                             suffixIcon: Icon(Icons.arrow_drop_down),
                           ),
                           child: Text(
-                            DateFormat('dd/MM/yyyy HH:mm').format(_transactionDate),
+                            DateFormat(
+                              'dd/MM/yyyy HH:mm',
+                            ).format(_transactionDate),
                           ),
                         ),
                       ),
@@ -252,7 +253,9 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                       // Include Location
                       CheckboxListTile(
                         title: const Text('Sertakan Lokasi Saat Ini'),
-                        subtitle: const Text('Lokasi akan disimpan bersama pengeluaran'),
+                        subtitle: const Text(
+                          'Lokasi akan disimpan bersama pengeluaran',
+                        ),
                         value: _includeLocation,
                         onChanged: (value) {
                           setState(() {
@@ -345,7 +348,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
       final amount = double.parse(_amountController.text);
 
       ExpenseModel result;
-      
+
       if (widget.expense != null) {
         // Update existing expense
         result = await _expenseService.updateExpense(
@@ -355,19 +358,18 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
           amount: amount,
           category: _category,
           paymentMethod: _paymentMethod,
-          transactionDate: _transactionDate,
+          date: _transactionDate,
         );
       } else {
         // Create new expense
         result = await _expenseService.createExpense(
           userId: authProvider.currentUser!.id,
           title: title,
-          description: description.isEmpty ? null : description,
+          description: description.isEmpty ? 'No description' : description,
           amount: amount,
           category: _category,
           paymentMethod: _paymentMethod,
-          transactionDate: _transactionDate,
-          includeCurrentLocation: _includeLocation,
+          date: _transactionDate,
         );
       }
 

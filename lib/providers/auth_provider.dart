@@ -1,28 +1,27 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../core/services/supabase_service.dart';
-import '../models/user_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Provider untuk mengelola state autentikasi
 /// Author: Tamas dari TamsHub
 ///
-/// Provider ini mengelola semua state yang berkaitan dengan autentikasi user
-/// termasuk login, register, logout, dan status autentikasi.
+/// Provider ini mengelola autentikasi sederhana dengan hardcoded credentials.
 
 class AuthProvider extends ChangeNotifier {
-  final SupabaseService _supabaseService = SupabaseService.instance;
+  // Hardcoded credentials
+  static const String _validUsername = 'tamas';
+  static const String _validPassword = 'tamasnich';
+  static const String _prefsKey = 'is_logged_in';
 
-  UserModel? _currentUser;
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _isAuthenticated = false;
   String? _errorMessage;
+  String? _currentUsername;
 
   // Getters
-  UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
   String? get errorMessage => _errorMessage;
+  String? get currentUsername => _currentUsername;
 
   AuthProvider() {
     _initializeAuth();
@@ -30,83 +29,52 @@ class AuthProvider extends ChangeNotifier {
 
   /// Inisialisasi autentikasi
   Future<void> _initializeAuth() async {
+    _setLoading(true);
+
     try {
-      _setLoading(true);
+      // Check if user was previously logged in
+      final prefs = await SharedPreferences.getInstance();
+      final wasLoggedIn = prefs.getBool(_prefsKey) ?? false;
 
-      // Listen to auth state changes
-      _supabaseService.authStateChanges.listen((AuthState data) {
-        _handleAuthStateChange(data);
-      });
-
-      // Check current session
-      final session = _supabaseService.client.auth.currentSession;
-      if (session != null) {
-        await _loadUserProfile(session.user.id);
-        _setAuthenticated(true);
-      } else {
-        _setAuthenticated(false);
+      if (wasLoggedIn) {
+        final username = prefs.getString('username');
+        if (username != null) {
+          _currentUsername = username;
+          _setAuthenticated(true);
+        }
       }
     } catch (e) {
-      _setError('Gagal menginisialisasi autentikasi: $e');
-      _setAuthenticated(false);
+      debugPrint('Error initializing auth: $e');
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Handle perubahan state autentikasi
-  void _handleAuthStateChange(AuthState data) async {
-    final session = data.session;
-
-    if (session != null) {
-      // User logged in
-      await _loadUserProfile(session.user.id);
-      _setAuthenticated(true);
-    } else {
-      // User logged out
-      _currentUser = null;
-      _setAuthenticated(false);
-    }
-
-    _setLoading(false);
-  }
-
-  /// Load profil user dari database
-  Future<void> _loadUserProfile(String userId) async {
-    try {
-      final userData = await _supabaseService.selectSingle(
-        table: 'users',
-        filters: {'id': userId},
-      );
-
-      if (userData != null) {
-        _currentUser = UserModel.fromJson(userData);
-      }
-    } catch (e) {
-      debugPrint('Error loading user profile: $e');
-    }
-  }
-
-  /// Login dengan email dan password
-  Future<bool> signInWithEmailAndPassword({
-    required String email,
+  /// Login dengan hardcoded credentials
+  Future<bool> signInWithCredentials({
+    required String username,
     required String password,
   }) async {
     try {
       _setLoading(true);
       _clearError();
 
-      final response = await _supabaseService.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Simulate network delay
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      if (response.user != null) {
-        await _loadUserProfile(response.user!.id);
+      // Check credentials
+      if (username.trim().toLowerCase() == _validUsername &&
+          password == _validPassword) {
+        // Save login state
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(_prefsKey, true);
+        await prefs.setString('username', username.trim().toLowerCase());
+
+        _currentUsername = username.trim().toLowerCase();
         _setAuthenticated(true);
         return true;
       } else {
-        _setError('Login gagal');
+        _setError('Username atau password salah');
         return false;
       }
     } catch (e) {
@@ -117,288 +85,77 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Register dengan email dan password
-  Future<bool> signUpWithEmailAndPassword({
-    required String email,
-    required String password,
-    required String fullName,
-    String? phoneNumber,
-  }) async {
-    try {
-      _setLoading(true);
-      _clearError();
-
-      // First, validate Supabase configuration
-      final configValidation = await _supabaseService.validateConfiguration();
-      if (!configValidation['auth_working']) {
-        _setError(
-          'Konfigurasi database bermasalah: ${configValidation['error']}',
-        );
-        return false;
-      }
-
-      final response = await _supabaseService.signUpWithEmailAndPassword(
-        email: email,
-        password: password,
-        data: {'full_name': fullName, 'phone_number': phoneNumber},
-      );
-
-      if (response.user != null) {
-        // Create user profile in database with retry mechanism
-        await _createUserProfileWithRetry(
-          userId: response.user!.id,
-          email: email,
-          fullName: fullName,
-          phoneNumber: phoneNumber,
-        );
-
-        await _loadUserProfile(response.user!.id);
-        _setAuthenticated(true);
-        return true;
-      } else {
-        _setError('Registrasi gagal: User tidak dapat dibuat');
-        return false;
-      }
-    } on PostgrestException catch (e) {
-      String errorMessage = 'Database error: ${e.message}';
-      if (e.code == 'PGRST106') {
-        errorMessage =
-            'Konfigurasi database bermasalah. Silakan coba lagi nanti.';
-      }
-      _setError(errorMessage);
-      return false;
-    } catch (e) {
-      _setError('Registrasi gagal: $e');
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  /// Buat profil user di database dengan retry mechanism
-  Future<void> _createUserProfileWithRetry({
-    required String userId,
-    required String email,
-    required String fullName,
-    String? phoneNumber,
-    int maxRetries = 3,
-  }) async {
-    int attempts = 0;
-    Exception? lastException;
-
-    while (attempts < maxRetries) {
-      try {
-        await _createUserProfile(
-          userId: userId,
-          email: email,
-          fullName: fullName,
-          phoneNumber: phoneNumber,
-        );
-        return; // Success, exit retry loop
-      } catch (e) {
-        lastException = e is Exception ? e : Exception(e.toString());
-        attempts++;
-
-        if (attempts < maxRetries) {
-          // Wait before retry with exponential backoff
-          await Future.delayed(Duration(seconds: attempts * 2));
-        }
-      }
-    }
-
-    // If all retries failed, throw the last exception
-    throw lastException ??
-        Exception('Failed to create user profile after $maxRetries attempts');
-  }
-
-  /// Buat profil user di database
-  Future<void> _createUserProfile({
-    required String userId,
-    required String email,
-    required String fullName,
-    String? phoneNumber,
-  }) async {
-    try {
-      final now = DateTime.now();
-
-      // Try to create user profile with explicit error handling for schema issues
-      try {
-        await _supabaseService.insert(
-          table: 'users',
-          data: {
-            'id': userId,
-            'email': email,
-            'full_name': fullName,
-            'phone_number': phoneNumber,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-            'is_active': true,
-            'is_verified': false,
-          },
-        );
-      } on PostgrestException catch (e) {
-        if (e.code == 'PGRST106') {
-          // Schema error - try alternative approach
-          debugPrint(
-            'Schema error detected, trying alternative approach: ${e.message}',
-          );
-
-          // For now, we'll just log the user data and continue
-          // In production, you might want to create the table or use a different approach
-          debugPrint(
-            'User profile data: ${{'id': userId, 'email': email, 'full_name': fullName, 'phone_number': phoneNumber}}',
-          );
-
-          // Don't throw error, allow registration to continue
-          return;
-        } else {
-          rethrow;
-        }
-      }
-    } catch (e) {
-      debugPrint('Error creating user profile: $e');
-      rethrow;
-    }
-  }
-
   /// Logout
   Future<void> signOut() async {
     try {
       _setLoading(true);
-      await _supabaseService.signOut();
-      _currentUser = null;
+
+      // Clear saved login state
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefsKey);
+      await prefs.remove('username');
+
+      _currentUsername = null;
       _setAuthenticated(false);
-    } catch (e) {
-      _setError('Logout gagal: $e');
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  /// Reset password
-  Future<bool> resetPassword(String email) async {
-    try {
-      _setLoading(true);
       _clearError();
-
-      await _supabaseService.resetPassword(email);
-      return true;
     } catch (e) {
-      _setError('Reset password gagal: $e');
-      return false;
+      debugPrint('Error signing out: $e');
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Update profil user
-  Future<bool> updateProfile({
-    String? fullName,
-    String? phoneNumber,
-    String? address,
-    String? city,
-    String? province,
-    String? country,
-    String? occupation,
-    String? bio,
-    DateTime? dateOfBirth,
-  }) async {
-    if (_currentUser == null) return false;
-
-    try {
-      _setLoading(true);
-      _clearError();
-
-      final updateData = <String, dynamic>{
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      if (fullName != null) updateData['full_name'] = fullName;
-      if (phoneNumber != null) updateData['phone_number'] = phoneNumber;
-      if (address != null) updateData['address'] = address;
-      if (city != null) updateData['city'] = city;
-      if (province != null) updateData['province'] = province;
-      if (country != null) updateData['country'] = country;
-      if (occupation != null) updateData['occupation'] = occupation;
-      if (bio != null) updateData['bio'] = bio;
-      if (dateOfBirth != null) {
-        updateData['date_of_birth'] = dateOfBirth.toIso8601String();
-      }
-
-      await _supabaseService.update(
-        table: 'users',
-        data: updateData,
-        column: 'id',
-        value: _currentUser!.id,
-      );
-
-      // Reload user profile
-      await _loadUserProfile(_currentUser!.id);
-      return true;
-    } catch (e) {
-      _setError('Update profil gagal: $e');
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  /// Upload avatar
-  Future<bool> uploadAvatar(List<int> fileBytes, String fileName) async {
-    if (_currentUser == null) return false;
-
-    try {
-      _setLoading(true);
-      _clearError();
-
-      final avatarPath = '${_currentUser!.id}/$fileName';
-      final avatarUrl = await _supabaseService.uploadFile(
-        bucket: 'profile-images',
-        path: avatarPath,
-        fileBytes: fileBytes,
-        contentType: 'image/jpeg',
-      );
-
-      // Update user profile with new avatar URL
-      await _supabaseService.update(
-        table: 'users',
-        data: {
-          'avatar_url': avatarUrl,
-          'updated_at': DateTime.now().toIso8601String(),
-        },
-        column: 'id',
-        value: _currentUser!.id,
-      );
-
-      // Reload user profile
-      await _loadUserProfile(_currentUser!.id);
-      return true;
-    } catch (e) {
-      _setError('Upload avatar gagal: $e');
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // Helper methods
+  /// Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
+  /// Set authenticated state
   void _setAuthenticated(bool authenticated) {
     _isAuthenticated = authenticated;
     notifyListeners();
   }
 
+  /// Set error message
   void _setError(String error) {
     _errorMessage = error;
     notifyListeners();
   }
 
+  /// Clear error message
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
   }
+
+  /// Check if user is valid (for compatibility with existing code)
+  bool get hasValidUser => _isAuthenticated && _currentUsername != null;
+
+  /// Get user ID (for compatibility with existing code)
+  String get userId => _currentUsername ?? 'tamas';
+
+  /// Get display name (for compatibility with existing code)
+  String get displayName => _currentUsername?.toUpperCase() ?? 'TAMAS';
+
+  /// Get initials (for compatibility with existing code)
+  String get initials => _currentUsername?.substring(0, 1).toUpperCase() ?? 'T';
+
+  /// Get current user object (for compatibility with existing code)
+  SimpleUser? get currentUser => _isAuthenticated && _currentUsername != null
+      ? SimpleUser(id: userId, displayName: displayName, initials: initials)
+      : null;
+}
+
+/// Simple user class for compatibility
+class SimpleUser {
+  final String id;
+  final String displayName;
+  final String initials;
+
+  SimpleUser({
+    required this.id,
+    required this.displayName,
+    required this.initials,
+  });
 }

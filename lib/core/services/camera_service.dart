@@ -1,75 +1,65 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/app_constants.dart';
-import 'supabase_service.dart';
 
-/// Service untuk mengelola kamera dan media
+/// Service untuk mengelola kamera dan media (Local Storage)
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Service ini menyediakan fungsi-fungsi untuk mengambil foto, merekam video,
-/// dan mengelola media files dengan integrasi ke Supabase storage.
+/// dan mengelola media files dengan penyimpanan lokal.
 
 class CameraService {
   static CameraService? _instance;
   static CameraService get instance => _instance ??= CameraService._();
-  
+
   CameraService._();
 
   final ImagePicker _picker = ImagePicker();
-  final SupabaseService _supabaseService = SupabaseService.instance;
+
+  // Local storage key for media metadata
+  static const String _mediaStorageKey = 'local_media_storage';
 
   /// Mengambil foto dari kamera
   Future<File?> takePhoto() async {
     try {
       // Check camera permission
-      final cameraPermission = await Permission.camera.request();
-      if (!cameraPermission.isGranted) {
-        throw Exception('Izin kamera diperlukan untuk mengambil foto');
+      final cameraStatus = await Permission.camera.request();
+      if (!cameraStatus.isGranted) {
+        throw Exception('Camera permission denied');
       }
 
-      final XFile? photo = await _picker.pickImage(
+      final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
+        imageQuality: 85,
         maxWidth: 1920,
         maxHeight: 1080,
-        imageQuality: 85,
       );
 
-      if (photo != null) {
-        return File(photo.path);
-      }
-      return null;
+      return image != null ? File(image.path) : null;
     } catch (e) {
       debugPrint('Error taking photo: $e');
       rethrow;
     }
   }
 
-  /// Memilih foto dari galeri
+  /// Mengambil foto dari galeri
   Future<File?> pickImageFromGallery() async {
     try {
-      // Check storage permission
-      final storagePermission = await Permission.storage.request();
-      if (!storagePermission.isGranted) {
-        throw Exception('Izin penyimpanan diperlukan untuk mengakses galeri');
-      }
-
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
+        imageQuality: 85,
         maxWidth: 1920,
         maxHeight: 1080,
-        imageQuality: 85,
       );
 
-      if (image != null) {
-        return File(image.path);
-      }
-      return null;
+      return image != null ? File(image.path) : null;
     } catch (e) {
       debugPrint('Error picking image from gallery: $e');
       rethrow;
@@ -80,15 +70,15 @@ class CameraService {
   Future<File?> recordVideo() async {
     try {
       // Check camera permission
-      final cameraPermission = await Permission.camera.request();
-      if (!cameraPermission.isGranted) {
-        throw Exception('Izin kamera diperlukan untuk merekam video');
+      final cameraStatus = await Permission.camera.request();
+      if (!cameraStatus.isGranted) {
+        throw Exception('Camera permission denied');
       }
 
-      // Check microphone permission
-      final microphonePermission = await Permission.microphone.request();
-      if (!microphonePermission.isGranted) {
-        throw Exception('Izin mikrofon diperlukan untuk merekam video');
+      // Check microphone permission for video recording
+      final microphoneStatus = await Permission.microphone.request();
+      if (!microphoneStatus.isGranted) {
+        throw Exception('Microphone permission denied');
       }
 
       final XFile? video = await _picker.pickVideo(
@@ -96,93 +86,61 @@ class CameraService {
         maxDuration: Duration(seconds: AppConstants.maxVideoDuration),
       );
 
-      if (video != null) {
-        return File(video.path);
-      }
-      return null;
+      return video != null ? File(video.path) : null;
     } catch (e) {
       debugPrint('Error recording video: $e');
       rethrow;
     }
   }
 
-  /// Memilih video dari galeri
+  /// Mengambil video dari galeri
   Future<File?> pickVideoFromGallery() async {
     try {
-      // Check storage permission
-      final storagePermission = await Permission.storage.request();
-      if (!storagePermission.isGranted) {
-        throw Exception('Izin penyimpanan diperlukan untuk mengakses galeri');
-      }
-
       final XFile? video = await _picker.pickVideo(
         source: ImageSource.gallery,
+        maxDuration: Duration(seconds: AppConstants.maxVideoDuration),
       );
 
-      if (video != null) {
-        return File(video.path);
-      }
-      return null;
+      return video != null ? File(video.path) : null;
     } catch (e) {
       debugPrint('Error picking video from gallery: $e');
       rethrow;
     }
   }
 
-  /// Menyimpan file ke penyimpanan lokal
-  Future<File> saveToLocalStorage(File file, String fileName) async {
+  /// Save file to local storage
+  Future<String> saveToLocalStorage(
+    File file,
+    String fileName, {
+    String? userId,
+  }) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final mediaDir = Directory(path.join(directory.path, 'media'));
-      
+      final mediaDir = Directory('${directory.path}/media');
+
       if (!await mediaDir.exists()) {
         await mediaDir.create(recursive: true);
       }
 
-      final savedFile = File(path.join(mediaDir.path, fileName));
-      return await file.copy(savedFile.path);
-    } catch (e) {
-      debugPrint('Error saving file to local storage: $e');
-      rethrow;
-    }
-  }
+      final userDir = userId != null
+          ? Directory('${mediaDir.path}/$userId')
+          : mediaDir;
 
-  /// Upload file ke Supabase storage
-  Future<String> uploadToSupabase(File file, String fileName, {String? userId}) async {
-    try {
-      final fileBytes = await file.readAsBytes();
-      final fileExtension = path.extension(fileName).toLowerCase();
-      
-      // Determine content type
-      String contentType;
-      if (AppConstants.supportedImageFormats.contains(fileExtension.substring(1))) {
-        contentType = 'image/${fileExtension.substring(1)}';
-      } else if (AppConstants.supportedVideoFormats.contains(fileExtension.substring(1))) {
-        contentType = 'video/${fileExtension.substring(1)}';
-      } else {
-        contentType = 'application/octet-stream';
+      if (!await userDir.exists()) {
+        await userDir.create(recursive: true);
       }
 
-      // Create file path with user ID if provided
-      final filePath = userId != null 
-          ? '$userId/$fileName'
-          : fileName;
+      final localFile = File('${userDir.path}/$fileName');
+      await file.copy(localFile.path);
 
-      final publicUrl = await _supabaseService.uploadFile(
-        bucket: AppConstants.mediaBucket,
-        path: filePath,
-        fileBytes: fileBytes,
-        contentType: contentType,
-      );
-
-      return publicUrl;
+      return localFile.path;
     } catch (e) {
-      debugPrint('Error uploading file to Supabase: $e');
+      debugPrint('Error saving to local storage: $e');
       rethrow;
     }
   }
 
-  /// Menyimpan metadata media ke database
+  /// Menyimpan metadata media ke local storage
   Future<void> saveMediaMetadata({
     required String fileName,
     required String filePath,
@@ -193,22 +151,26 @@ class CameraService {
     Map<String, dynamic>? metadata,
   }) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final existingData = prefs.getString(_mediaStorageKey) ?? '[]';
+      final List<dynamic> mediaList = json.decode(existingData);
+
       final now = DateTime.now();
-      
-      await _supabaseService.insert(
-        table: AppConstants.mediaTable,
-        data: {
-          'user_id': userId,
-          'file_name': fileName,
-          'file_path': filePath,
-          'file_type': fileType,
-          'file_size': fileSize,
-          'description': description,
-          'metadata': metadata,
-          'created_at': now.toIso8601String(),
-          'updated_at': now.toIso8601String(),
-        },
-      );
+      final mediaItem = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'user_id': userId,
+        'file_name': fileName,
+        'file_path': filePath,
+        'file_type': fileType,
+        'file_size': fileSize,
+        'description': description,
+        'metadata': metadata,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      };
+
+      mediaList.add(mediaItem);
+      await prefs.setString(_mediaStorageKey, json.encode(mediaList));
     } catch (e) {
       debugPrint('Error saving media metadata: $e');
       rethrow;
@@ -218,84 +180,133 @@ class CameraService {
   /// Mendapatkan daftar media user
   Future<List<Map<String, dynamic>>> getUserMedia(String userId) async {
     try {
-      return await _supabaseService.select(
-        table: AppConstants.mediaTable,
-        filters: {'user_id': userId},
-        orderBy: 'created_at',
-        ascending: false,
-      );
+      final prefs = await SharedPreferences.getInstance();
+      final existingData = prefs.getString(_mediaStorageKey) ?? '[]';
+      final List<dynamic> mediaList = json.decode(existingData);
+
+      return mediaList
+          .where((item) => item['user_id'] == userId)
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList()
+        ..sort((a, b) => b['created_at'].compareTo(a['created_at']));
     } catch (e) {
       debugPrint('Error getting user media: $e');
-      rethrow;
+      return [];
     }
   }
 
   /// Menghapus media
   Future<void> deleteMedia(String mediaId, String filePath) async {
     try {
-      // Delete from storage
-      await _supabaseService.deleteFile(
-        bucket: AppConstants.mediaBucket,
-        path: filePath,
-      );
+      // Delete physical file
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
 
-      // Delete from database
-      await _supabaseService.delete(
-        table: AppConstants.mediaTable,
-        column: 'id',
-        value: mediaId,
-      );
+      // Delete from metadata storage
+      final prefs = await SharedPreferences.getInstance();
+      final existingData = prefs.getString(_mediaStorageKey) ?? '[]';
+      final List<dynamic> mediaList = json.decode(existingData);
+
+      mediaList.removeWhere((item) => item['id'] == mediaId);
+      await prefs.setString(_mediaStorageKey, json.encode(mediaList));
     } catch (e) {
       debugPrint('Error deleting media: $e');
       rethrow;
     }
   }
 
-  /// Validasi ukuran file
-  bool validateFileSize(File file, {bool isImage = true}) {
-    final fileSize = file.lengthSync();
-    final maxSize = isImage ? AppConstants.maxImageSize : AppConstants.maxImageSize * 10; // 50MB for video
-    
-    return fileSize <= maxSize;
-  }
+  /// Validasi file media
+  bool isValidMediaFile(File file) {
+    final fileExtension = path.extension(file.path).toLowerCase();
+    final extensionWithoutDot = fileExtension.substring(1);
 
-  /// Validasi format file
-  bool validateFileFormat(String fileName, {bool isImage = true}) {
-    final extension = path.extension(fileName).toLowerCase().substring(1);
-    
-    if (isImage) {
-      return AppConstants.supportedImageFormats.contains(extension);
-    } else {
-      return AppConstants.supportedVideoFormats.contains(extension);
-    }
-  }
-
-  /// Generate nama file unik
-  String generateUniqueFileName(String originalFileName) {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final extension = path.extension(originalFileName);
-    final baseName = path.basenameWithoutExtension(originalFileName);
-    
-    return '${baseName}_$timestamp$extension';
+    return AppConstants.supportedImageFormats.contains(extensionWithoutDot) ||
+        AppConstants.supportedVideoFormats.contains(extensionWithoutDot);
   }
 
   /// Mendapatkan ukuran file dalam format yang mudah dibaca
   String getFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
-  /// Cek apakah file adalah gambar
-  bool isImageFile(String fileName) {
-    final extension = path.extension(fileName).toLowerCase().substring(1);
-    return AppConstants.supportedImageFormats.contains(extension);
+  /// Mendapatkan tipe file
+  String getFileType(File file) {
+    final fileExtension = path.extension(file.path).toLowerCase();
+    final extensionWithoutDot = fileExtension.substring(1);
+
+    if (AppConstants.supportedImageFormats.contains(extensionWithoutDot)) {
+      return 'image';
+    } else if (AppConstants.supportedVideoFormats.contains(
+      extensionWithoutDot,
+    )) {
+      return 'video';
+    }
+    return 'unknown';
   }
 
-  /// Cek apakah file adalah video
-  bool isVideoFile(String fileName) {
-    final extension = path.extension(fileName).toLowerCase().substring(1);
-    return AppConstants.supportedVideoFormats.contains(extension);
+  /// Generate unique filename
+  String generateFileName(String extension) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'media_${timestamp}.$extension';
+  }
+
+  /// Generate unique filename from path
+  String generateUniqueFileName(String originalPath) {
+    final extension = path.extension(originalPath);
+    return generateFileName(extension.substring(1));
+  }
+
+  /// Check if file is image
+  bool isImageFile(String filePath) {
+    final fileExtension = path.extension(filePath).toLowerCase();
+    final extensionWithoutDot = fileExtension.substring(1);
+    return AppConstants.supportedImageFormats.contains(extensionWithoutDot);
+  }
+
+  /// Check if file is video
+  bool isVideoFile(String filePath) {
+    final fileExtension = path.extension(filePath).toLowerCase();
+    final extensionWithoutDot = fileExtension.substring(1);
+    return AppConstants.supportedVideoFormats.contains(extensionWithoutDot);
+  }
+
+  /// Validate file size
+  bool validateFileSize(File file, {required bool isImage}) {
+    final fileSize = file.lengthSync();
+    if (isImage) {
+      return fileSize <= AppConstants.maxImageSize;
+    } else {
+      return fileSize <= AppConstants.maxVideoSize;
+    }
+  }
+
+  /// Validate file format
+  bool validateFileFormat(String fileName, {required bool isImage}) {
+    final fileExtension = path.extension(fileName).toLowerCase();
+    final extensionWithoutDot = fileExtension.substring(1);
+
+    if (isImage) {
+      return AppConstants.supportedImageFormats.contains(extensionWithoutDot);
+    } else {
+      return AppConstants.supportedVideoFormats.contains(extensionWithoutDot);
+    }
+  }
+
+  /// Upload to Supabase (compatibility method - now saves locally)
+  Future<String> uploadToSupabase(
+    File file,
+    String fileName, {
+    String? userId,
+    String? contentType,
+  }) async {
+    // Redirect to local storage
+    return await saveToLocalStorage(file, fileName, userId: userId);
   }
 }

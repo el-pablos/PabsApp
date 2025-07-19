@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/services/todo_service.dart';
-import '../../models/todo_model.dart';
+import '../../core/models/todo_model.dart';
 import '../../providers/auth_provider.dart';
 import 'widgets/todo_item_widget.dart';
 import 'widgets/add_todo_dialog.dart';
-import 'widgets/todo_statistics_widget.dart';
-import 'todo_map_screen.dart';
+// import 'widgets/todo_statistics_widget.dart'; // Removed for simplicity
+// Google Maps removed - using device GPS only
 
 /// Screen untuk fitur TodoList
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Screen ini menyediakan interface untuk mengelola todo items
 /// dengan integrasi lokasi dan statistik.
 
@@ -22,10 +22,11 @@ class TodoListScreen extends StatefulWidget {
   State<TodoListScreen> createState() => _TodoListScreenState();
 }
 
-class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStateMixin {
+class _TodoListScreenState extends State<TodoListScreen>
+    with TickerProviderStateMixin {
   final TodoService _todoService = TodoService.instance;
   late TabController _tabController;
-  
+
   bool _isLoading = false;
   List<TodoModel> _allTodos = [];
   List<TodoModel> _pendingTodos = [];
@@ -54,9 +55,9 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
     });
 
     try {
-      final todos = await _todoService.getUserTodos(authProvider.currentUser!.id);
-      final statistics = await _todoService.getTodoStatistics(authProvider.currentUser!.id);
-      
+      final todos = await _todoService.getUserTodos(authProvider.userId);
+      final statistics = await _todoService.getTodoStats(authProvider.userId);
+
       setState(() {
         _allTodos = todos;
         _pendingTodos = todos.where((todo) => !todo.isCompleted).toList();
@@ -80,14 +81,15 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => TodoMapScreen(todos: _allTodos),
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Fitur peta menggunakan GPS device'),
+                  duration: Duration(seconds: 2),
                 ),
               );
             },
-            icon: const Icon(Icons.map),
-            tooltip: 'Lihat di Peta',
+            icon: const Icon(Icons.location_on),
+            tooltip: 'Lokasi GPS',
           ),
           IconButton(
             onPressed: _loadTodos,
@@ -106,10 +108,7 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
               icon: const Icon(Icons.check_circle),
               text: 'Selesai (${_completedTodos.length})',
             ),
-            Tab(
-              icon: const Icon(Icons.analytics),
-              text: 'Statistik',
-            ),
+            Tab(icon: const Icon(Icons.analytics), text: 'Statistik'),
           ],
         ),
       ),
@@ -125,8 +124,8 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTodoDialog,
-        child: const Icon(Icons.add),
         tooltip: 'Tambah Todo',
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -137,24 +136,20 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.task_alt,
-              size: 80,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.task_alt, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Tidak ada tugas pending',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               'Tambah tugas baru untuk memulai',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[500],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
             ),
           ],
         ),
@@ -185,24 +180,20 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 80,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.check_circle_outline, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Belum ada tugas selesai',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               'Selesaikan tugas untuk melihatnya di sini',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[500],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
             ),
           ],
         ),
@@ -230,10 +221,7 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
   Widget _buildStatisticsTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: TodoStatisticsWidget(
-        statistics: _statistics,
-        todos: _allTodos,
-      ),
+      child: const Center(child: Text('Statistik akan ditampilkan di sini')),
     );
   }
 
@@ -263,9 +251,9 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
 
   Future<void> _toggleTodoStatus(String todoId, bool isCompleted) async {
     try {
-      await _todoService.toggleTodoStatus(todoId, isCompleted);
+      await _todoService.toggleTodoStatus(todoId);
       await _loadTodos();
-      
+
       _showSuccessSnackBar(
         isCompleted ? 'Todo ditandai selesai' : 'Todo ditandai belum selesai',
       );
@@ -307,19 +295,13 @@ class _TodoListScreenState extends State<TodoListScreen> with TickerProviderStat
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 }
