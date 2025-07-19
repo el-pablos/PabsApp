@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Provider untuk mengelola tema aplikasi
 /// Author: Tamas dari TamsHub
@@ -61,6 +62,72 @@ class ThemeProvider extends ChangeNotifier {
         seedColor: const Color(0xFF2196F3),
         brightness: Brightness.light,
       ),
+
+      // Text Theme with Poppins font
+      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme)
+          .copyWith(
+            // Compact text sizes for better space utilization
+            displayLarge: GoogleFonts.poppins(
+              fontSize: 32,
+              fontWeight: FontWeight.w600,
+            ),
+            displayMedium: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+            ),
+            displaySmall: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
+            headlineLarge: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+            ),
+            headlineMedium: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            headlineSmall: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+            titleLarge: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            titleMedium: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            titleSmall: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            bodyLarge: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+            bodyMedium: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+            bodySmall: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+            ),
+            labelLarge: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            labelMedium: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            labelSmall: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
 
       // App Bar Theme
       appBarTheme: const AppBarTheme(

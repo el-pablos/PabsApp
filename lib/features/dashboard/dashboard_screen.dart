@@ -9,6 +9,7 @@ import '../todolist/todolist_screen.dart';
 import '../fintech/fintech_screen.dart';
 import '../pddikti/pddikti_screen.dart';
 import '../botcahx/botcahx_screen.dart';
+import '../screenshot/screenshot_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../health/health_runtime_screen.dart';
@@ -93,6 +94,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       icon: Icons.api_rounded,
       color: Colors.red,
       isEnabled: AppConstants.featureBotcahxEnabled,
+    ),
+    DashboardFeature(
+      title: 'Screenshot',
+      subtitle: 'Ambil screenshot website',
+      icon: Icons.screenshot_rounded,
+      color: Colors.orange,
+      isEnabled: true,
     ),
     DashboardFeature(
       title: 'Maps',
@@ -323,57 +331,78 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: InkWell(
         onTap: feature.isEnabled ? () => _handleFeatureTap(feature) : null,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: Container(
+          height: 140, // Fixed height to prevent overflow
+          padding: const EdgeInsets.all(12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: feature.isEnabled
                       ? feature.color.withValues(alpha: 0.1)
                       : Colors.grey.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: Icon(
                   feature.icon,
-                  size: 28,
+                  size: 24,
                   color: feature.isEnabled ? feature.color : Colors.grey,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                feature.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: feature.isEnabled ? null : Colors.grey,
+              const SizedBox(height: 8),
+              Flexible(
+                child: Text(
+                  feature.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: feature.isEnabled ? null : Colors.grey,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 4),
-              Text(
-                feature.subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: feature.isEnabled ? Colors.grey[600] : Colors.grey,
+              const SizedBox(height: 2),
+              Flexible(
+                child: Text(
+                  feature.subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: feature.isEnabled ? Colors.grey[600] : Colors.grey,
+                    fontSize: 10,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              if (!feature.isEnabled)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+              if (!feature.isEnabled) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Text(
                     'Segera Hadir',
                     style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.orange,
+                      fontSize: 8,
+                      color: Colors.orange[700],
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
+              ],
             ],
           ),
         ),
@@ -441,6 +470,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (context) => const BotcahXScreen()));
+        break;
+      case 'Screenshot':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const ScreenshotScreen()),
+        );
         break;
       default:
         ScaffoldMessenger.of(context).showSnackBar(

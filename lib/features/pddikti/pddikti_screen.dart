@@ -47,9 +47,12 @@ class _PDDIKTIScreenState extends State<PDDIKTIScreen>
   }
 
   Future<void> _checkConnection() async {
-    final isConnected = await _pddiktiService.validateConnection();
-    if (!isConnected && mounted) {
-      _showErrorSnackBar('Tidak dapat terhubung ke server PDDIKTI');
+    final connectionResult = await _pddiktiService.validateConnection();
+    if (!connectionResult['success'] && mounted) {
+      final message =
+          connectionResult['message'] ??
+          'Tidak dapat terhubung ke server PDDIKTI';
+      _showErrorSnackBar(message);
     }
   }
 
