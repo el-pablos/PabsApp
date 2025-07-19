@@ -11,6 +11,7 @@ import '../pddikti/pddikti_screen.dart';
 import '../botcahx/botcahx_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
+import '../health/health_runtime_screen.dart';
 import 'widgets/dashboard_stats_widget.dart';
 import 'widgets/quick_actions_widget.dart';
 import 'widgets/recent_activities_widget.dart';
@@ -480,6 +481,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (context) => const BotcahXScreen()));
+        break;
+      case 'health':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const HealthRuntimeScreen()),
+        );
+        break;
+      case 'camera':
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const CameraScreen()));
         break;
       default:
         ScaffoldMessenger.of(

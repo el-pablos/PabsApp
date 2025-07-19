@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/services/environment_service.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'providers/auth_provider.dart';
@@ -19,8 +20,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Load environment variables
-    await dotenv.load(fileName: ".env");
+    // Initialize secure environment service
+    await EnvironmentService.initialize();
+
+    // Log configuration status (safely)
+    EnvironmentService.logConfigurationStatus();
 
     // Supabase initialization removed - using simple auth now
 

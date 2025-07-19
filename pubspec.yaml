@@ -72,6 +72,7 @@ dependencies:
   permission_handler: ^11.3.1
   url_launcher: ^6.3.1
   package_info_plus: ^8.0.2
+  device_info_plus: ^10.1.2
 
   # Environment & Config
   flutter_dotenv: ^5.1.0

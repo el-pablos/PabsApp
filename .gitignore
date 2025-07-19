@@ -43,11 +43,50 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment variables
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
 .env.local
 .env.production
 .env.staging
+.env.development
+
+# API Keys and Secrets (CRITICAL SECURITY)
+*.key
+*.pem
+*.p12
+*.keystore
+secrets/
+config/secrets.yaml
+**/*secret*
+**/*key*
+**/*token*
+**/*api*key*
+**/*password*
+**/*credential*
+**/*auth*
+**/*jwt*
+**/*oauth*
+
+# Database credentials
+database.json
+db_config.json
+supabase_config.json
+
+# Service account files
+service-account*.json
+firebase-adminsdk*.json
+
+# Certificate files
+*.crt
+*.cer
+*.der
+
+# Private configuration files
+private_config.dart
+secrets.dart
+api_keys.dart
 
 # Database
 *.db

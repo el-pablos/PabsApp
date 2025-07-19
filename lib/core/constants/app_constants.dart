@@ -14,9 +14,9 @@ class AppConstants {
 
   // Supabase Configuration removed - using simple auth now
 
-  // BotcahX API Configuration
+  // BotcahX API Configuration - MOVED TO ENVIRONMENT VARIABLES
   static const String botcahxApiUrl = 'https://api.botcahx.eu.org';
-  static const String botcahxApiKey = 'kontol';
+  // API key moved to environment variables for security
 
   // PDDIKTI API Configuration
   static const String pddiktiApiUrl = 'https://api-frontend.kemdikbud.go.id';

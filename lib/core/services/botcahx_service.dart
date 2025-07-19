@@ -3,21 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../../models/botcahx_model.dart';
+import 'environment_service.dart';
 
 /// Service untuk integrasi API BotcahX
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Service ini menyediakan fungsi-fungsi untuk mengakses berbagai
 /// API dari BotcahX seperti AI, tools, dan utilities.
 
 class BotcahXService {
   static BotcahXService? _instance;
   static BotcahXService get instance => _instance ??= BotcahXService._();
-  
+
   BotcahXService._();
 
-  static const String _baseUrl = 'https://api.botcahx.eu.org';
-  static const String _apiKey = 'YOUR_API_KEY'; // Replace with actual API key
+  static String get _baseUrl => EnvironmentService.botcahxApiUrl;
+  static String get _apiKey => EnvironmentService.botcahxApiKey;
 
   final http.Client _client = http.Client();
 
@@ -26,10 +27,7 @@ class BotcahXService {
     try {
       final response = await _client.get(
         Uri.parse('$_baseUrl/api'),
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'PabsApp/1.0',
-        },
+        headers: {'Accept': 'application/json', 'User-Agent': 'PabsApp/1.0'},
       );
 
       if (response.statusCode == 200) {
@@ -123,18 +121,16 @@ class BotcahXService {
           'Content-Type': 'application/json',
           'User-Agent': 'PabsApp/1.0',
         },
-        body: json.encode({
-          'url': url,
-          'quality': quality,
-          'apikey': _apiKey,
-        }),
+        body: json.encode({'url': url, 'quality': quality, 'apikey': _apiKey}),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return BotcahXDownloadResponse.fromJson(data);
       } else {
-        throw Exception('Failed to download YouTube video: ${response.statusCode}');
+        throw Exception(
+          'Failed to download YouTube video: ${response.statusCode}',
+        );
       }
     } catch (e) {
       debugPrint('Error downloading YouTube video: $e');
@@ -143,9 +139,7 @@ class BotcahXService {
   }
 
   /// Download video dari TikTok
-  Future<BotcahXDownloadResponse> downloadTikTok({
-    required String url,
-  }) async {
+  Future<BotcahXDownloadResponse> downloadTikTok({required String url}) async {
     try {
       final response = await _client.post(
         Uri.parse('$_baseUrl/api/download/tiktok'),
@@ -154,17 +148,16 @@ class BotcahXService {
           'Content-Type': 'application/json',
           'User-Agent': 'PabsApp/1.0',
         },
-        body: json.encode({
-          'url': url,
-          'apikey': _apiKey,
-        }),
+        body: json.encode({'url': url, 'apikey': _apiKey}),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return BotcahXDownloadResponse.fromJson(data);
       } else {
-        throw Exception('Failed to download TikTok video: ${response.statusCode}');
+        throw Exception(
+          'Failed to download TikTok video: ${response.statusCode}',
+        );
       }
     } catch (e) {
       debugPrint('Error downloading TikTok video: $e');
@@ -179,10 +172,7 @@ class BotcahXService {
     try {
       final response = await _client.get(
         Uri.parse('$_baseUrl/api/stalk/instagram/$username?apikey=$_apiKey'),
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'PabsApp/1.0',
-        },
+        headers: {'Accept': 'application/json', 'User-Agent': 'PabsApp/1.0'},
       );
 
       if (response.statusCode == 200) {
@@ -202,10 +192,7 @@ class BotcahXService {
     try {
       final response = await _client.get(
         Uri.parse('$_baseUrl/api/info/gempa?apikey=$_apiKey'),
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'PabsApp/1.0',
-        },
+        headers: {'Accept': 'application/json', 'User-Agent': 'PabsApp/1.0'},
       );
 
       if (response.statusCode == 200) {
@@ -221,16 +208,11 @@ class BotcahXService {
   }
 
   /// Cek cuaca berdasarkan kota
-  Future<BotcahXCuacaResponse> getCuaca({
-    required String kota,
-  }) async {
+  Future<BotcahXCuacaResponse> getCuaca({required String kota}) async {
     try {
       final response = await _client.get(
         Uri.parse('$_baseUrl/api/info/cuaca/$kota?apikey=$_apiKey'),
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'PabsApp/1.0',
-        },
+        headers: {'Accept': 'application/json', 'User-Agent': 'PabsApp/1.0'},
       );
 
       if (response.statusCode == 200) {
@@ -258,11 +240,7 @@ class BotcahXService {
           'Content-Type': 'application/json',
           'User-Agent': 'PabsApp/1.0',
         },
-        body: json.encode({
-          'text': text,
-          'size': size,
-          'apikey': _apiKey,
-        }),
+        body: json.encode({'text': text, 'size': size, 'apikey': _apiKey}),
       );
 
       if (response.statusCode == 200) {
@@ -289,10 +267,7 @@ class BotcahXService {
           'Content-Type': 'application/json',
           'User-Agent': 'PabsApp/1.0',
         },
-        body: json.encode({
-          'url': url,
-          'apikey': _apiKey,
-        }),
+        body: json.encode({'url': url, 'apikey': _apiKey}),
       );
 
       if (response.statusCode == 200) {
@@ -310,13 +285,15 @@ class BotcahXService {
   /// Validasi koneksi ke API BotcahX
   Future<bool> validateConnection() async {
     try {
-      final response = await _client.get(
-        Uri.parse('$_baseUrl/api'),
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'PabsApp/1.0',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await _client
+          .get(
+            Uri.parse('$_baseUrl/api'),
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'PabsApp/1.0',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       return response.statusCode == 200;
     } catch (e) {
