@@ -62,22 +62,46 @@ class AuthProvider extends ChangeNotifier {
       // Simulate network delay
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Check credentials
-      if (username.trim().toLowerCase() == _validUsername &&
-          password == _validPassword) {
+      // Clean input
+      final cleanUsername = username.trim().toLowerCase();
+      final cleanPassword = password.trim();
+
+      // Debug logging
+      debugPrint('Login attempt:');
+      debugPrint('Input username: "$cleanUsername"');
+      debugPrint('Expected username: "$_validUsername"');
+      debugPrint('Input password length: ${cleanPassword.length}');
+      debugPrint('Expected password length: ${_validPassword.length}');
+      debugPrint('Username match: ${cleanUsername == _validUsername}');
+      debugPrint('Password match: ${cleanPassword == _validPassword}');
+
+      // Check credentials with exact match
+      if (cleanUsername == _validUsername && cleanPassword == _validPassword) {
         // Save login state
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool(_prefsKey, true);
-        await prefs.setString('username', username.trim().toLowerCase());
+        await prefs.setString('username', cleanUsername);
 
-        _currentUsername = username.trim().toLowerCase();
+        _currentUsername = cleanUsername;
         _setAuthenticated(true);
+
+        debugPrint('Login successful for user: $cleanUsername');
         return true;
       } else {
-        _setError('Username atau password salah');
+        // Provide more specific error messages
+        String errorMsg = 'Username atau password salah';
+        if (cleanUsername != _validUsername) {
+          errorMsg = 'Username salah. Gunakan: "$_validUsername"';
+        } else if (cleanPassword != _validPassword) {
+          errorMsg = 'Password salah. Periksa kembali password Anda';
+        }
+
+        debugPrint('Login failed: $errorMsg');
+        _setError(errorMsg);
         return false;
       }
     } catch (e) {
+      debugPrint('Login error: $e');
       _setError('Login gagal: $e');
       return false;
     } finally {
