@@ -3,17 +3,14 @@ import 'package:intl/intl.dart';
 
 /// Widget untuk menampilkan statistik dashboard
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Widget ini menampilkan statistik ringkas dari berbagai fitur
 /// aplikasi seperti jumlah foto, todo, expense, dll.
 
 class DashboardStatsWidget extends StatelessWidget {
   final Map<String, dynamic> stats;
 
-  const DashboardStatsWidget({
-    super.key,
-    required this.stats,
-  });
+  const DashboardStatsWidget({super.key, required this.stats});
 
   @override
   Widget build(BuildContext context) {
@@ -24,12 +21,12 @@ class DashboardStatsWidget extends StatelessWidget {
         children: [
           Text(
             'Ringkasan Aktivitas',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          
+
           // Stats Grid
           GridView.count(
             shrinkWrap: true,
@@ -83,9 +80,7 @@ class DashboardStatsWidget extends StatelessWidget {
   ) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -101,45 +96,47 @@ class DashboardStatsWidget extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 20,
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(icon, color: color, size: 16),
                   ),
                 ),
-                Icon(
-                  Icons.trending_up,
-                  color: Colors.grey[400],
-                  size: 16,
-                ),
+                Icon(Icons.trending_up, color: Colors.grey[400], size: 14),
               ],
             ),
-            const Spacer(),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                value,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+            const SizedBox(height: 2),
+            Flexible(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                  fontSize: 11,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -149,13 +146,13 @@ class DashboardStatsWidget extends StatelessWidget {
 
   String _formatCurrency(dynamic amount) {
     if (amount == null) return 'Rp 0';
-    
+
     final formatter = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
     );
-    
+
     return formatter.format(amount);
   }
 }

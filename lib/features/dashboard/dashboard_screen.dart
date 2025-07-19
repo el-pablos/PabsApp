@@ -9,6 +9,8 @@ import '../todolist/todolist_screen.dart';
 import '../fintech/fintech_screen.dart';
 import '../pddikti/pddikti_screen.dart';
 import '../botcahx/botcahx_screen.dart';
+import '../profile/profile_screen.dart';
+import '../settings/settings_screen.dart';
 import 'widgets/dashboard_stats_widget.dart';
 import 'widgets/quick_actions_widget.dart';
 import 'widgets/recent_activities_widget.dart';
@@ -193,11 +195,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 0:
         return _buildDashboard();
       case 1:
-        return _buildFavorites();
-      case 2:
-        return _buildHistory();
-      case 3:
         return _buildProfile();
+      case 2:
+        return _buildSettings();
       default:
         return _buildDashboard();
     }
@@ -378,16 +378,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildFavorites() {
-    return const Center(child: Text('Fitur Favorit - Segera Hadir'));
-  }
-
-  Widget _buildHistory() {
-    return const Center(child: Text('Riwayat - Segera Hadir'));
+  Widget _buildSettings() {
+    return const SettingsScreen();
   }
 
   Widget _buildProfile() {
-    return const Center(child: Text('Profil - Segera Hadir'));
+    return const ProfileScreen();
   }
 
   Widget _buildBottomNavigationBar() {
@@ -405,16 +401,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           label: 'Dashboard',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.favorite_rounded),
-          label: 'Favorit',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.history_rounded),
-          label: 'Riwayat',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.person_rounded),
           label: 'Profil',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings_rounded),
+          label: 'Pengaturan',
         ),
       ],
     );
