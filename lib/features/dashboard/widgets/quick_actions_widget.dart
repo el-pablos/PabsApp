@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 
 /// Widget untuk quick actions di dashboard
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Widget ini menampilkan tombol-tombol aksi cepat untuk
 /// fitur-fitur yang sering digunakan.
 
 class QuickActionsWidget extends StatelessWidget {
   final Function(String action) onActionTap;
 
-  const QuickActionsWidget({
-    super.key,
-    required this.onActionTap,
-  });
+  const QuickActionsWidget({super.key, required this.onActionTap});
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +20,12 @@ class QuickActionsWidget extends StatelessWidget {
         children: [
           Text(
             'Aksi Cepat',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          
+
           // Quick Actions Row
           Row(
             children: [
@@ -64,7 +61,7 @@ class QuickActionsWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Second Row
           Row(
             children: [
@@ -99,6 +96,34 @@ class QuickActionsWidget extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+
+          // Fourth Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildQuickActionCard(
+                  context,
+                  'Lokasi',
+                  Icons.location_on,
+                  Colors.green,
+                  'location',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildQuickActionCard(
+                  context,
+                  'API Debug',
+                  Icons.bug_report,
+                  Colors.deepOrange,
+                  'debug',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Container()), // Empty space
+            ],
+          ),
         ],
       ),
     );
@@ -113,9 +138,7 @@ class QuickActionsWidget extends StatelessWidget {
   ) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () => onActionTap(action),
         borderRadius: BorderRadius.circular(12),
@@ -129,18 +152,14 @@ class QuickActionsWidget extends StatelessWidget {
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                ),
+                child: Icon(icon, color: color, size: 24),
               ),
               const SizedBox(height: 8),
               Text(
                 title,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

@@ -12,6 +12,8 @@ import '../botcahx/botcahx_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../health/health_runtime_screen.dart';
+import '../maps/enhanced_location_screen.dart';
+import '../debug/api_debug_screen.dart';
 import 'widgets/dashboard_stats_widget.dart';
 import 'widgets/quick_actions_widget.dart';
 import 'widgets/recent_activities_widget.dart';
@@ -491,6 +493,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (context) => const CameraScreen()));
+        break;
+      case 'location':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const EnhancedLocationScreen(),
+          ),
+        );
+        break;
+      case 'debug':
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const ApiDebugScreen()));
         break;
       default:
         ScaffoldMessenger.of(
