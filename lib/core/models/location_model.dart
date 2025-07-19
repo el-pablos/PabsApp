@@ -1,6 +1,8 @@
+import 'dart:math';
+
 /// Model untuk Location data
 /// Author: Tamas dari TamsHub
-/// 
+///
 /// Model ini merepresentasikan data lokasi yang disimpan user
 
 class LocationModel {
@@ -48,7 +50,7 @@ class LocationModel {
       longitude: (json['longitude'] as num).toDouble(),
       address: json['address'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null 
+      updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
     );
@@ -81,26 +83,31 @@ class LocationModel {
   double distanceTo(LocationModel other) {
     // Simple distance calculation (not accurate for long distances)
     const double earthRadius = 6371000; // meters
-    
+
     final lat1Rad = latitude * (3.14159265359 / 180);
     final lat2Rad = other.latitude * (3.14159265359 / 180);
     final deltaLatRad = (other.latitude - latitude) * (3.14159265359 / 180);
     final deltaLngRad = (other.longitude - longitude) * (3.14159265359 / 180);
-    
-    final a = (deltaLatRad / 2).sin() * (deltaLatRad / 2).sin() +
-        lat1Rad.cos() * lat2Rad.cos() *
-        (deltaLngRad / 2).sin() * (deltaLngRad / 2).sin();
-    
-    final c = 2 * (a.sqrt()).atan2((1 - a).sqrt());
-    
+
+    final a =
+        sin(deltaLatRad / 2) * sin(deltaLatRad / 2) +
+        cos(lat1Rad) *
+            cos(lat2Rad) *
+            sin(deltaLngRad / 2) *
+            sin(deltaLngRad / 2);
+
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
     return earthRadius * c;
   }
 
   /// Get formatted coordinates string
-  String get coordinatesString => '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+  String get coordinatesString =>
+      '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
 
   /// Get Google Maps URL
-  String get googleMapsUrl => 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
+  String get googleMapsUrl =>
+      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
 
   /// Get navigation URL for Google Maps app
   String get navigationUrl => 'google.navigation:q=$latitude,$longitude&mode=d';
